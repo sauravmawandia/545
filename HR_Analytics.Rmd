@@ -335,9 +335,7 @@ logit_model <-
 
 summary(logit_model)
 
-
 test$logit_model<-predict(logit_model,test)
-test
 #head(test)
 
 #Now using that threshold created the predicted values for each record
