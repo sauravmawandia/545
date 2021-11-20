@@ -1,0 +1,349 @@
+---
+title: "Project"
+author: "Manvir Singh, Saurav Mawandia, Sougandh Kohli"
+date: "`r Sys.Date()`"t
+---
+
+# Tables and Figures
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(readxl)
+library(plyr)
+
+dataset = read.csv("~/Documents/545/dataset.xls")
+
+summary(dataset)
+# sec 2
+data_set <- rename(dataset, c("sales" = "role"))
+
+data_set$DateofHire <- as.Date(data_set$DateofHire, '%m/%d/%Y')
+data_set$employementEndDateOrTodaysDate <- as.Date(
+  ifelse(
+    data_set$DateofTermination == '',
+    '11/18/2021',
+    data_set$DateofTermination
+  ),
+  '%m/%d/%Y'
+)
+data_set$exp_in_company <-
+  round(
+    difftime(
+      data_set$employementEndDateOrTodaysDate,
+      data_set$DateofHire,
+      units = "days"
+    ) / 365,
+    digits = 3
+  )
+
+data_set$exp_in_company <- as.numeric(data_set$exp_in_company)
+names(data_set)[10] <- "salary"
+head(data_set)
+dim(data_set)
+str(data_set)
+
+
+attrition <- as.factor(data_set$Termd)
+summary(attrition)
+
+perc_attrition_rate <- sum(data_set$Termd / length(data_set$Termd)) * 100
+#percentage of attrition
+print(perc_attrition_rate)
+
+data_set$PerformanceScoreNumeric <-
+  ifelse(data_set$PerformanceScore == 'Exceeds', 4, 0)
+
+data_set$PerformanceScoreNumeric <-
+  ifelse(data_set$PerformanceScore == 'Fully Meets',
+         3,
+         data_set$PerformanceScoreNumeric)
+data_set$PerformanceScoreNumeric <-
+  ifelse(
+    data_set$PerformanceScore == 'Needs Improvement',
+    2,
+    data_set$PerformanceScoreNumeric
+  )
+data_set$PerformanceScoreNumeric <-
+  ifelse(data_set$PerformanceScore == 'PIP',
+         1,
+         data_set$PerformanceScoreNumeric)
+
+
+
+# Overview of summary (Turnover V.S. Non-turnover)
+
+cor_vars <-
+  data_set[, c(
+    'SpecialProjectsCount',
+    'PerformanceScoreNumeric',
+    'EmpSatisfaction',
+    'DaysLateLast30',
+    'exp_in_company',
+    'EngagementSurvey',
+    'Termd'
+  )]
+
+
+aggregate(cor_vars[, c(
+  'SpecialProjectsCount',
+  'PerformanceScoreNumeric',
+  'EmpSatisfaction',
+  'DaysLateLast30',
+  'exp_in_company',
+  'EngagementSurvey'
+)],
+by = list(Category = cor_vars$Termd),
+FUN = mean)
+```
+3b. Correlation Matrix & Heatmap¶
+
+```{r}
+library(reshape2)
+library(ggplot2)
+cor_vars <-
+  data_set[, c(
+    'SpecialProjectsCount',
+    'PerformanceScoreNumeric',
+    'EmpSatisfaction',
+    'DaysLateLast30',
+    'exp_in_company',
+    'EngagementSurvey',
+    'Termd'
+  )]
+cor(cor_vars)
+trans<-cor(cor_vars)
+melted_cormat <- melt(trans)
+
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() +theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+3b2. Statistical Test for Correlation
+```{r}
+
+# Let's compare the means of our employee turnover satisfaction against the employee population satisfaction
+emp_population_satisfaction <-mean(data_set$EmpSatisfaction)
+left_pop<-subset(data_set,Termd==1)
+
+emp_turnover_satisfaction <-mean(left_pop$EmpSatisfaction)
+
+print( c('The mean for the employee population is: ', emp_population_satisfaction) )
+print( c('The mean for the employees that had a turnover is: ' ,emp_turnover_satisfaction) )
+```
+Conducting the T-Test
+
+Let's conduct a t-test at 95% confidence level and see if it correctly rejects the null hypothesis that the sample comes from the same distribution as the employee population. To conduct a one sample t-test, we can use the stats.ttest_1samp() function:
+
+```{r}
+t.test(left_pop$EmpSatisfaction,mu=emp_population_satisfaction)
+```
+
+
+
+T-Test Quantile
+```{r}
+#degress of freedom
+dof<-sum(as.numeric(data_set$Termd))
+
+LQ <-qt(0.025,dof)  # Left Quartile
+
+RQ <-qt(0.975,dof)  # Right Quartile
+
+print (c('The t-distribution left quartile range is: ',LQ))
+print (c('The t-distribution right quartile range is: ' ,RQ))
+```
+
+3c. Distribution Plots (Performance Score - Evaluation - AverageMonthlyHours)
+
+
+```{r}
+data_set
+vis_1<-table(data_set$PerformanceScore,data_set$Termd)
+#print(vis_1)
+d_vis_1<-as.data.frame(vis_1)
+print(d_vis_1)
+library(ggplot2)
+p<-ggplot(d_vis_1, aes(x=Var1,y=Freq,fill=Var2)) +
+ geom_bar(position="dodge",stat='identity') + coord_flip()
+
+print(p)
+```
+Position and Termination 
+```{r}
+vis_2<-table(data_set$Position,data_set$Termd)
+d_vis_2<-as.data.frame(vis_2)
+d_vis_2<-subset(d_vis_2,Var2==1)
+#print(d_vis_2)
+library(ggplot2)
+d_vis_2$Var1 <- factor(d_vis_2$Var1, levels = d_vis_2$Var1[order(-d_vis_2$Freq)])
+p<-ggplot(d_vis_2, aes(x=Var1,y=Freq,fill=Var1)) +
+ geom_bar(stat='identity') +theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+print(p)
+```
+
+
+Race and Termination
+
+```{r}
+vis_3<-table(data_set$RaceDesc,data_set$Termd)
+d_vis_3<-as.data.frame(vis_3)
+#print(d_vis_1)
+library(ggplot2)
+p<-ggplot(d_vis_3, aes(x=Var1,y=Freq,fill=Var2)) +
+ geom_bar(position="dodge",stat='identity') + coord_flip()
+
+print(p)
+
+```
+
+Employment Survey and Termination
+
+```{r}
+
+
+left_data<-subset(data_set,Termd==1)
+stay_data<-subset(data_set,Termd==0)
+ggplot() + geom_density(aes(x=EngagementSurvey), colour="red", data=left_data) + 
+  geom_density(aes(x=EngagementSurvey), colour="blue", data=stay_data)
+
+```
+
+
+Employment Satisfaction and Termination
+
+```{r}
+left_data<-subset(data_set,Termd==1)
+stay_data<-subset(data_set,Termd==0)
+ggplot() + geom_density(aes(x=EmpSatisfaction), colour="red", data=left_data) + 
+  geom_density(aes(x=EmpSatisfaction), colour="blue", data=stay_data)
+
+```
+
+
+#ProjectCount VS AverageMonthlyHours [BOXPLOT]
+#Looks like the average employees who stayed worked about 200hours/month. Those that had a turnover worked about 250hours/month and 150hours/month
+```{r}
+library(ggplot2)
+data_set$SpecialProjectsCount
+p<-ggplot(data_set, aes(x = factor(SpecialProjectsCount), y = Absences, fill = factor(Termd))) +
+  geom_boxplot() + scale_fill_manual(values = c("yellow", "orange"))
+print(p)
+```
+
+
+```{r}
+ggplot(data_set, aes(EngagementSurvey,salary, color = Termd)) +
+  geom_point(shape = 16, size = 5, show.legend = FALSE) +
+  theme_minimal() +
+  scale_color_gradient(low = "#0091ff", high = "#f0650e")
+
+```
+
+
+```{r}
+library(Boruta)
+data_set$Termd<-as.factor(data_set$Termd)
+data_set <- na.omit(data_set)
+boruta.train <- Boruta(Termd~., data = data_set, doTrace = 2)
+
+print(boruta.train)
+plot(boruta.train, xlab = "", xaxt = "n")
+lz<-lapply(1:ncol(boruta.train$ImpHistory),function(i)
+boruta.train$ImpHistory[is.finite(boruta.train$ImpHistory[,i]),i])
+names(lz) <- colnames(boruta.train$ImpHistory)
+Labels <- sort(sapply(lz,median))
+axis(side = 1,las=2,labels = names(Labels),
+at = 1:ncol(boruta.train$ImpHistory), cex.axis = 0.7)
+           
+```
+
+
+
+```{r }
+#Creating training and test sets for the logistic regression
+smp_size <- floor(0.75 * nrow(data_set))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(data_set)), size = smp_size)
+
+train <- data_set[train_ind, ]
+test <- data_set[-train_ind, ]
+
+dim(test)
+dim(train)
+```
+
+
+Model
+
+```{r}
+library(gmodels)
+library (Hmisc)
+library (caTools)
+library (ROCR)
+logit_model<-glm(Termd~+ManagerID+exp_in_company ,data=train,binomial())
+
+summary(logit_model)
+
+test$logit_model<-predict(logit_model,test)
+#head(test)
+
+colAUC(test$logit_model,test$left, plotROC=TRUE)
+
+
+#Now using that threshold created the predicted values for each record
+test$prediction<-ifelse(test$logit_model>=-.95,1,0)
+
+#Make use of the confusion matrix to calculate accuracy, precision and recall
+#CrossTable(test$left, test$prediction,prop.chisq=FALSE,prop.r=FALSE,prop.t=FALSE)
+conf_mat<-table(test$left,test$prediction)
+
+#print(conf_mat)
+#class(conf_mat)
+accuracy<-(conf_mat[1,1]+conf_mat[2,2])/(conf_mat[1,1]+conf_mat[2,2]+conf_mat[1,2]+conf_mat[2,1])
+recall<-(conf_mat[2,2])/(conf_mat[1,2]+conf_mat[2,2])
+precision<-(conf_mat[2,2])/(conf_mat[2,2]+conf_mat[2,1])
+
+print(c("Accuracy:",accuracy))
+print(c("Precision:",precision))
+print(c("Recall:",recall))
+
+```
+
+
+caret
+```{r}
+
+# load the library
+library(caret)
+# load the iris dataset
+
+# define training control
+train_control <- trainControl(method="cv", number=10)
+train$left<-as.factor(train$left)
+# fix the parameters of the algorithm
+grid <- expand.grid()
+# train the model
+model <- train(Termd~., data=train, trControl=train_control, method="glm",family=binomial())
+#model <- train(left~satisfaction_level+last_evaluation+number_project+exp_in_company+average_montly_hours, data=train, trControl=train_control, method="glm",family=binomial())
+# summarize results
+print(model)
+```
+Logistic Regression V.S. Random Forest V.S. Decision Tree V.S. AdaBoost Model
+
+```{r}
+# NOTE: By adding in "class_weight = balanced", the Logistic Auc increased by about 10%! This adjusts the threshold value
+
+
+# Decision Tree Model
+library(rpart.plot)
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+set.seed(3333)
+dtree_fit <- train(left ~., data = train, method = "rpart",
+                   parms = list(split = "information"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+print(dtree_fit)
+
+```
