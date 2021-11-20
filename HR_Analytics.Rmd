@@ -232,7 +232,6 @@ ggplot() + geom_density(aes(x=EmpSatisfaction), colour="red", data=left_data) +
 #Looks like the average employees who stayed worked about 200hours/month. Those that had a turnover worked about 250hours/month and 150hours/month
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(ggplot2)
-data_set$SpecialProjectsCount
 p<-ggplot(data_set, aes(x = factor(SpecialProjectsCount), y = Absences, fill = factor(Termd))) +
   geom_boxplot() + scale_fill_manual(values = c("yellow", "orange"))
 print(p)
@@ -354,7 +353,6 @@ precision<-(conf_mat[2,2])/(conf_mat[2,2]+conf_mat[2,1])
 print(c("Accuracy:",accuracy))
 print(c("Precision:",precision))
 print(c("Recall:",recall))
-library(caret)
 
 prediction_result <- test[, c('Employee_Name', 'EmploymentStatus','DateofTermination', 'prediction')]
 ```
