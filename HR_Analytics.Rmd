@@ -1,5 +1,5 @@
 ---
-title: "Project"
+title: "HR Analytics Data"
 author: "Manvir Singh, Saurav Mawandia, Sougandh Kohli"
 date: "`r Sys.Date()`"
 output: html_document
@@ -19,10 +19,9 @@ library(gnm)
 library(vcdExtra)
 library(kableExtra)
 library(tidyr)
-
+library(reshape2)
 
 data_set = read.csv("~/Documents/545/545/dataset.xls")
-
 data_set$DateofHire <- as.Date(data_set$DateofHire, '%m/%d/%Y')
 data_set$employementEndDateOrTodaysDate <- as.Date(
   ifelse(
@@ -48,8 +47,6 @@ names(data_set)[10] <- "salary"
 head(data_set)
 dim(data_set)
 str(data_set)
-
-
 
 attrition <- as.factor(data_set$Termd)
 summary(attrition)
@@ -79,7 +76,6 @@ data_set$PerformanceScoreNumeric <-
 
 
 # Overview of summary (Turnover V.S. Non-turnover)
-
 cor_vars <-
   data_set[, c(
     'SpecialProjectsCount',
@@ -90,7 +86,6 @@ cor_vars <-
     'EngagementSurvey',
     'Termd'
   )]
-
 
 aggregate(cor_vars[, c(
   'SpecialProjectsCount',
@@ -107,8 +102,6 @@ FUN = mean)
 3b. Correlation Matrix & Heatmap¶
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(reshape2)
-library(ggplot2)
 cor_vars <-
   data_set[, c(
     'SpecialProjectsCount',
@@ -167,11 +160,13 @@ print (c('The t-distribution right quartile range is: ' ,RQ))
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 vis_1<-table(data_set$PerformanceScore,data_set$Termd)
-#print(vis_1)
+print(vis_1)
 d_vis_1<-as.data.frame(vis_1)
 print(d_vis_1)
-library(ggplot2)
-p<-ggplot(d_vis_1, aes(x=Var1,y=Freq,fill=Var2)) +
+d_vis_1$Performance <- d_vis_1$Var1
+d_vis_1$Resignation <- d_vis_1$Var2
+
+p<-ggplot(d_vis_1, aes(x=Performance,y=Freq,fill=Resignation)) +
  geom_bar(position="dodge",stat='identity') + coord_flip()
 
 print(p)
@@ -183,9 +178,11 @@ d_vis_2<-as.data.frame(vis_2)
 d_vis_2<-subset(d_vis_2,Var2==1)
 #print(d_vis_2)
 d_vis_2$Var1 <- factor(d_vis_2$Var1, levels = d_vis_2$Var1[order(-d_vis_2$Freq)])
-p<-ggplot(d_vis_2, aes(x=Var1,y=Freq,fill=Var1)) +
- geom_bar(stat='identity') +theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
+d_vis_2$Position <- d_vis_2$Var1
+d_vis_2$Resignation <- d_vis_2$Var2
+p<-ggplot(d_vis_2, aes(x=Position,y=Freq,fill=Resignation)) +
+ geom_bar(stat='identity') +theme(axis.text.x = element_text(angle = 90, hjust = 1))
 print(p)
 ```
 
@@ -195,9 +192,9 @@ Race and Termination
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 vis_3<-table(data_set$RaceDesc,data_set$Termd)
 d_vis_3<-as.data.frame(vis_3)
-#print(d_vis_1)
-library(ggplot2)
-p<-ggplot(d_vis_3, aes(x=Var1,y=Freq,fill=Var2)) +
+d_vis_3$Race <- d_vis_3$Var1
+d_vis_3$Resignation <- d_vis_3$Var2
+p<-ggplot(d_vis_3, aes(x=Race,y=Freq,fill=Resignation)) +
  geom_bar(position="dodge",stat='identity') + coord_flip()
 
 print(p)
@@ -212,6 +209,10 @@ Employment Survey and Termination
 left_data<-subset(data_set,Termd==1)
 stay_data<-subset(data_set,Termd==0)
 ggplot() + geom_density(aes(x=EngagementSurvey), colour="red", data=left_data) + 
+    labs(title = "Employment Survey and Resignation\n", x = "Employment Rating", y = "Density", color = "Legend Title\n") +
+    scale_color_manual(labels = c("Resigned", "Not Resigned"), values = c("blue", "red")) +
+    theme_bw() +
+
   geom_density(aes(x=EngagementSurvey), colour="blue", data=stay_data)
 
 ```
@@ -223,6 +224,8 @@ Employment Satisfaction and Termination
 left_data<-subset(data_set,Termd==1)
 stay_data<-subset(data_set,Termd==0)
 ggplot() + geom_density(aes(x=EmpSatisfaction), colour="red", data=left_data) + 
+   labs(title = "Employment Satisfaction and Resignation\n", x = "Employment Satisfaction", y = "Density", color ="Legend Title\n")+
+    theme_bw() +
   geom_density(aes(x=EmpSatisfaction), colour="blue", data=stay_data)
 
 ```
@@ -339,13 +342,9 @@ test$logit_model<-predict(logit_model,test)
 
 #Now using that threshold created the predicted values for each record
 test$prediction<-ifelse(test$logit_model>=-.95,1,0)
-#Make use of the confusion matrix to calculate accuracy, precision and recall
-#CrossTable(test$left, test$prediction,prop.chisq=FALSE,prop.r=FALSE,prop.t=FALSE)
 conf_mat<-table(test$Termd,test$prediction)
-conf_mat
+print(conf_mat)
 
-#print(conf_mat)
-#class(conf_mat)
 accuracy<-(conf_mat[1,1]+conf_mat[2,2])/(conf_mat[1,1]+conf_mat[2,2]+conf_mat[1,2]+conf_mat[2,1])
 recall<-(conf_mat[2,2])/(conf_mat[1,2]+conf_mat[2,2])
 precision<-(conf_mat[2,2])/(conf_mat[2,2]+conf_mat[2,1])
@@ -353,8 +352,6 @@ precision<-(conf_mat[2,2])/(conf_mat[2,2]+conf_mat[2,1])
 print(c("Accuracy:",accuracy))
 print(c("Precision:",precision))
 print(c("Recall:",recall))
-
-prediction_result <- test[, c('Employee_Name', 'EmploymentStatus','DateofTermination', 'prediction')]
 ```
 
 
