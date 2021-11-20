@@ -1,16 +1,19 @@
 ---
 title: "Project"
 author: "Manvir Singh, Saurav Mawandia, Sougandh Kohli"
-date: "`r Sys.Date()`"t
+date: "`r Sys.Date()`"
+output: html_document
 ---
 
 # Tables and Figures
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(readxl)
 library(plyr)
+library(ggplot2)
 
-dataset = read.csv("~/Documents/545/dataset.xls")
+
+dataset = read.csv("~/Documents/545/545/dataset.xls")
+
 
 summary(dataset)
 # sec 2
@@ -96,7 +99,7 @@ FUN = mean)
 ```
 3b. Correlation Matrix & Heatmap¶
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(reshape2)
 library(ggplot2)
 cor_vars <-
@@ -118,7 +121,7 @@ ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) +
 ```
 
 3b2. Statistical Test for Correlation
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 # Let's compare the means of our employee turnover satisfaction against the employee population satisfaction
 emp_population_satisfaction <-mean(data_set$EmpSatisfaction)
@@ -133,14 +136,14 @@ Conducting the T-Test
 
 Let's conduct a t-test at 95% confidence level and see if it correctly rejects the null hypothesis that the sample comes from the same distribution as the employee population. To conduct a one sample t-test, we can use the stats.ttest_1samp() function:
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 t.test(left_pop$EmpSatisfaction,mu=emp_population_satisfaction)
 ```
 
 
 
 T-Test Quantile
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 #degress of freedom
 dof<-sum(as.numeric(data_set$Termd))
 
@@ -155,8 +158,7 @@ print (c('The t-distribution right quartile range is: ' ,RQ))
 3c. Distribution Plots (Performance Score - Evaluation - AverageMonthlyHours)
 
 
-```{r}
-data_set
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 vis_1<-table(data_set$PerformanceScore,data_set$Termd)
 #print(vis_1)
 d_vis_1<-as.data.frame(vis_1)
@@ -168,12 +170,11 @@ p<-ggplot(d_vis_1, aes(x=Var1,y=Freq,fill=Var2)) +
 print(p)
 ```
 Position and Termination 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 vis_2<-table(data_set$Position,data_set$Termd)
 d_vis_2<-as.data.frame(vis_2)
 d_vis_2<-subset(d_vis_2,Var2==1)
 #print(d_vis_2)
-library(ggplot2)
 d_vis_2$Var1 <- factor(d_vis_2$Var1, levels = d_vis_2$Var1[order(-d_vis_2$Freq)])
 p<-ggplot(d_vis_2, aes(x=Var1,y=Freq,fill=Var1)) +
  geom_bar(stat='identity') +theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -184,7 +185,7 @@ print(p)
 
 Race and Termination
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 vis_3<-table(data_set$RaceDesc,data_set$Termd)
 d_vis_3<-as.data.frame(vis_3)
 #print(d_vis_1)
@@ -198,7 +199,7 @@ print(p)
 
 Employment Survey and Termination
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 
 left_data<-subset(data_set,Termd==1)
@@ -211,7 +212,7 @@ ggplot() + geom_density(aes(x=EngagementSurvey), colour="red", data=left_data) +
 
 Employment Satisfaction and Termination
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 left_data<-subset(data_set,Termd==1)
 stay_data<-subset(data_set,Termd==0)
 ggplot() + geom_density(aes(x=EmpSatisfaction), colour="red", data=left_data) + 
@@ -222,7 +223,7 @@ ggplot() + geom_density(aes(x=EmpSatisfaction), colour="red", data=left_data) +
 
 #ProjectCount VS AverageMonthlyHours [BOXPLOT]
 #Looks like the average employees who stayed worked about 200hours/month. Those that had a turnover worked about 250hours/month and 150hours/month
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(ggplot2)
 data_set$SpecialProjectsCount
 p<-ggplot(data_set, aes(x = factor(SpecialProjectsCount), y = Absences, fill = factor(Termd))) +
@@ -231,7 +232,7 @@ print(p)
 ```
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data_set, aes(EngagementSurvey,salary, color = Termd)) +
   geom_point(shape = 16, size = 5, show.legend = FALSE) +
   theme_minimal() +
@@ -240,7 +241,7 @@ ggplot(data_set, aes(EngagementSurvey,salary, color = Termd)) +
 ```
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(Boruta)
 data_set$Termd<-as.factor(data_set$Termd)
 data_set <- na.omit(data_set)
@@ -259,7 +260,7 @@ at = 1:ncol(boruta.train$ImpHistory), cex.axis = 0.7)
 
 
 
-```{r }
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 #Creating training and test sets for the logistic regression
 smp_size <- floor(0.75 * nrow(data_set))
 
@@ -277,7 +278,7 @@ dim(train)
 
 Model
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(gmodels)
 library (Hmisc)
 library (caTools)
@@ -289,7 +290,7 @@ summary(logit_model)
 test$logit_model<-predict(logit_model,test)
 #head(test)
 
-colAUC(test$logit_model,test$left, plotROC=TRUE)
+colAUC(test$logit_model,test$Termd, plotROC=TRUE)
 
 
 #Now using that threshold created the predicted values for each record
@@ -297,7 +298,7 @@ test$prediction<-ifelse(test$logit_model>=-.95,1,0)
 
 #Make use of the confusion matrix to calculate accuracy, precision and recall
 #CrossTable(test$left, test$prediction,prop.chisq=FALSE,prop.r=FALSE,prop.t=FALSE)
-conf_mat<-table(test$left,test$prediction)
+conf_mat<-table(test$Termd,test$prediction)
 
 #print(conf_mat)
 #class(conf_mat)
@@ -313,7 +314,7 @@ print(c("Recall:",recall))
 
 
 caret
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 # load the library
 library(caret)
@@ -321,7 +322,7 @@ library(caret)
 
 # define training control
 train_control <- trainControl(method="cv", number=10)
-train$left<-as.factor(train$left)
+train$left<-as.factor(train$Termd)
 # fix the parameters of the algorithm
 grid <- expand.grid()
 # train the model
@@ -329,21 +330,4 @@ model <- train(Termd~., data=train, trControl=train_control, method="glm",family
 #model <- train(left~satisfaction_level+last_evaluation+number_project+exp_in_company+average_montly_hours, data=train, trControl=train_control, method="glm",family=binomial())
 # summarize results
 print(model)
-```
-Logistic Regression V.S. Random Forest V.S. Decision Tree V.S. AdaBoost Model
-
-```{r}
-# NOTE: By adding in "class_weight = balanced", the Logistic Auc increased by about 10%! This adjusts the threshold value
-
-
-# Decision Tree Model
-library(rpart.plot)
-trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
-set.seed(3333)
-dtree_fit <- train(left ~., data = train, method = "rpart",
-                   parms = list(split = "information"),
-                   trControl=trctrl,
-                   tuneLength = 10)
-print(dtree_fit)
-
 ```
